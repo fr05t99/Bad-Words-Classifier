@@ -1,6 +1,7 @@
 import re
 from typing import Tuple
-
+from nltk.stem import PorterStemmer
+from nltk.tokenize import word_tokenize
 
 class TrieNode(object):
     """
@@ -43,7 +44,7 @@ def add(root, word: str):
     node.word_finished = True
 
 
-def find_prefix(root, prefix: str) -> Tuple[bool, int]:
+def check_badWord(root, prefix: str):
     """
     Check and return 
       1. If the prefix exsists in any of the words we added so far
@@ -52,8 +53,7 @@ def find_prefix(root, prefix: str) -> Tuple[bool, int]:
     node = root
     # If the root node has no children, then return False.
     # Because it means we are trying to search in an empty trie
-    if not root.children:
-        return False, 0
+    i = 0
     for char in prefix:
         char_not_found = True
         # Search through all the children of the present `node`
@@ -66,11 +66,11 @@ def find_prefix(root, prefix: str) -> Tuple[bool, int]:
                 break
         # Return False anyway when we did not find a char.
         if char_not_found:
-            return False, 0
+            return False
     # Well, we are here means we have found the prefix. Return true to indicate that
     # And also the counter of the last node. This indicates how many words have this
     # prefix
-    return True, node.counter
+    return True
 
 if __name__ == "__main__":
     root = TrieNode('*')
@@ -93,8 +93,10 @@ if __name__ == "__main__":
     #Loading our dictionary
     with open("dictionary.txt") as word_file:
         english_words = set(word.strip().lower() for word in word_file)
+    ps = PorterStemmer()
     for i in range(len(text)):
         text[i] = text[i].lower()
+        text[i] = ps.stem(text[i])
     for word in text:
         if word not in english_words:
             inEnglish = False
@@ -103,19 +105,19 @@ if __name__ == "__main__":
 
     if inEnglish:
         #insert paragraph in trie
-        for word in text:
-            add(root, word)
-        
-        numberOfBadWords = 0
         for badWord in badWords:
-            temp = find_prefix(root, badWord)
-            numberOfBadWords += temp[1]
+            add(root, badWord)
+        
+        ans = False
+        for word in text:
+            temp = check_badWord(root, word)
+            ans = ans or temp
 
-        if numberOfBadWords == 0:
+        if ans == False:
             outputFile.write("No bad words")
             #print("1")
         else:
-            outputFile.write("Has " + str(numberOfBadWords) + " bad words")
+            outputFile.write("Has bad words")
             #print("2")
             
     else:
